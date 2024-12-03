@@ -26,7 +26,7 @@ def generate_test_data():
         vector = np.random.rand(VECTOR_SIZE).tolist()
         
         # Set some points as deprecated randomly
-        is_deprecated = np.random.choice([True, False], p=[0.2, 0.8])
+        is_deprecated = bool(np.random.choice([True, False], p=[0.2, 0.8]))
         
         # Create point with payload
         point = PointStruct(
@@ -37,7 +37,7 @@ def generate_test_data():
                 "deprecated_at": time.strftime('%Y-%m-%d %H:%M:%S') if is_deprecated else None,
                 "text": f"Sample text {i}",
                 "category": np.random.choice(["A", "B", "C"]),
-                "value": np.random.randint(1, 100)
+                "value": int(np.random.randint(1, 100))
             }
         )
         points.append(point)

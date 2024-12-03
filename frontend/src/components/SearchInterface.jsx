@@ -1,28 +1,69 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, ThumbsDown } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '../components/ui/alert';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../components/ui/alert-dialog';
+import { QdrantClient } from '@qdrant/js-client-rest';
 
 const SearchInterface = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [results, setResults] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [client, setClient] = useState(null);
+  const [error, setError] = useState(null);
 
-  // Mock data for demonstration
-  const mockResults = [
-    { id: 1, text: "This is the first answer from the database", score: 0.95 },
-    { id: 2, text: "Here's another relevant response", score: 0.87 },
-    { id: 3, text: "Third result from the knowledge base", score: 0.82 }
-  ];
+  useEffect(() => {
+    try {
+      const qdrantUrl = process.env.REACT_APP_QDRANT_URL || 'http://localhost';
+      const qdrantPort = process.env.REACT_APP_QDRANT_PORT || '6333';
+      const url = `${qdrantUrl}:${qdrantPort}`;
 
-  const handleSearch = (e) => {
+      const newClient = new QdrantClient({ url });
+      setClient(newClient);
+    } catch (err) {
+      console.error('Failed to initialize Qdrant client:', err);
+      setError('Failed to connect to search service');
+    }
+  }, []);
+
+  const handleSearch = async (e) => {
     e.preventDefault();
+    if (!client) {
+      setError('Search service not available');
+      return;
+    }
+
     setIsLoading(true);
-    // Simulate API call
-    setTimeout(() => {
-      setResults(mockResults);
+    setError(null);
+
+    try {
+      // For testing, create a random vector (replace with actual embedding)
+      const searchVector = Array.from({ length: 128 }, () => Math.random());
+
+      const searchResults = await client.query('test_collection', {
+        query: searchVector,
+        limit: 10,
+        filter: {
+          must_not: [{
+            key: 'deprecated',
+            match: { value: true }
+          }]
+        },
+        with_payload: true
+      });
+
+      const formattedResults = searchResults.points.map(result => ({
+        id: result.id,
+        score: result.score,
+        ...result.payload,
+      }));
+
+      setResults(formattedResults);
+    } catch (err) {
+      console.error('Search failed:', err);
+      setError('Failed to perform search. Please try again.');
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   };
 
   const handleDownvote = (id) => {

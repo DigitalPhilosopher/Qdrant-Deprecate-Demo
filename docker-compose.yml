@@ -11,10 +11,11 @@ services:
       - ./frontend:/app
       - /app/node_modules
     environment:
-      - REACT_APP_QDRANT_URL=http://qdrant:6333
+      - REACT_APP_QDRANT_URL=http://localhost
+      - REACT_APP_INTERNAL_QDRANT_URL=http://qdrant
     depends_on:
       - qdrant
-- data_loader
+      - data_loader
     networks:
       - qdrant_network
 
@@ -25,7 +26,7 @@ services:
       - "6334:6334"
     volumes:
       - qdrant_storage:/qdrant/storage
-networks:
+    networks:
       - qdrant_network
     healthcheck:
       test:
