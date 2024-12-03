@@ -13,7 +13,8 @@ This project implements a responsive search interface that allows users to find 
 - Fast search results
 - Downvote functionality
 - Clean, intuitive user interface
-
+- Load preset fake data from CSV
+- Option to use real vector search with OpenAI API key
 
 ## Getting Started
 
@@ -32,10 +33,18 @@ This project implements a responsive search interface that allows users to find 
    ```bash
    docker-compose up --build -d
    ```
+
 3. Open the search interface in your browser
    ```
    http://localhost:3000
    ```
+
+### Using Real Vector Search
+
+- To use a real vector search, submit your OpenAI API key in the `.env` file. If no API key is provided, the search will use random data.
+  ```env
+  OPENAI_API_KEY=your_openai_api_key_here
+  ```
 
 ## Usage
 
