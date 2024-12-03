@@ -66,9 +66,31 @@ const SearchInterface = () => {
     }
   };
 
-  const handleDownvote = (id) => {
-    // Here you would make the actual API call to mark/delete the item
-    setResults(results.filter(result => result.id !== id));
+  const handleDownvote = async (id) => {
+    if (!client) {
+      setError('Search service not available');
+      return;
+    }
+
+    console.log("Deleting item with id:", id);
+
+    try {
+      // Mark the item as deprecated using setPayload
+      await client.setPayload('test_collection', {
+        payload: {
+          deprecated: true,
+        },
+        points: [id],
+      });
+
+      console.log("Item marked as deprecated");
+
+      // Update the local state to remove the item from the results
+      setResults(results.filter(result => result.id !== id));
+    } catch (err) {
+      console.error('Failed to mark item as deprecated:', err);
+      setError('Failed to update item. Please try again.');
+    }
   };
 
   return (
@@ -117,7 +139,10 @@ const SearchInterface = () => {
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                   <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction onClick={() => handleDownvote(result.id)}>
+                  <AlertDialogAction
+                    onClick={() => handleDownvote(result.id)}
+                    className="bg-red-600 hover:bg-red-700"
+                  >
                     Confirm
                   </AlertDialogAction>
                 </AlertDialogFooter>

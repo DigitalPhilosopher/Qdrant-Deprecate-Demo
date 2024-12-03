@@ -9,7 +9,7 @@ client = QdrantClient(host="qdrant", port=6333)
 # Configuration
 COLLECTION_NAME = "test_collection"
 VECTOR_SIZE = 128
-NUM_POINTS = 1000
+NUM_POINTS = 5
 
 def create_collection():
     # Create collection with vector configuration
