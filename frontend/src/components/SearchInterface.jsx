@@ -5,7 +5,6 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { QdrantClient } from '@qdrant/js-client-rest';
 
 const SearchInterface = () => {
-  const [searchQuery, setSearchQuery] = useState('');
   const [results, setResults] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [client, setClient] = useState(null);
@@ -25,8 +24,7 @@ const SearchInterface = () => {
     }
   }, []);
 
-  const handleSearch = async (e) => {
-    e.preventDefault();
+  const handleSearch = async () => {
     if (!client) {
       setError('Search service not available');
       return;
@@ -37,7 +35,7 @@ const SearchInterface = () => {
 
     try {
       // For testing, create a random vector (replace with actual embedding)
-      const searchVector = Array.from({ length: 128 }, () => Math.random());
+      const searchVector = Array.from({ length: 1536 }, () => Math.random());
 
       const searchResults = await client.query('test_collection', {
         query: searchVector,
@@ -95,26 +93,14 @@ const SearchInterface = () => {
 
   return (
     <div className="max-w-2xl mx-auto p-6 space-y-6">
-      {/* Search Form */}
-      <form onSubmit={handleSearch} className="space-y-4">
-        <div className="relative">
-          <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-500" />
-          <input
-            type="text"
-            placeholder="Search for a text..."
-            className="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-        </div>
-        <button
-          type="submit"
-          className="w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 transition-colors"
-          disabled={isLoading}
-        >
-          {isLoading ? 'Searching...' : 'Search'}
-        </button>
-      </form>
+      {/* Search Button */}
+      <button
+        onClick={handleSearch}
+        className="w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 transition-colors"
+        disabled={isLoading}
+      >
+        {isLoading ? 'Searching...' : 'Search Random'}
+      </button>
 
       {/* Results List */}
       <div className="space-y-4">
@@ -151,16 +137,6 @@ const SearchInterface = () => {
           </div>
         ))}
       </div>
-
-      {/* Empty State */}
-      {searchQuery && results.length === 0 && !isLoading && (
-        <Alert>
-          <AlertTitle>No Results Found</AlertTitle>
-          <AlertDescription>
-            Try adjusting your search terms to find what you're looking for.
-          </AlertDescription>
-        </Alert>
-      )}
     </div>
   );
 };

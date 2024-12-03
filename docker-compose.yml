@@ -14,8 +14,10 @@ services:
       - REACT_APP_QDRANT_URL=http://localhost
       - REACT_APP_INTERNAL_QDRANT_URL=http://qdrant
     depends_on:
-      - qdrant
-      - data_loader
+      qdrant:
+        condition: service_healthy
+      data_loader:
+        condition: service_completed_successfully
     networks:
       - qdrant_network
 

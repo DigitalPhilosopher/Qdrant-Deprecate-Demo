@@ -1,42 +1,15 @@
 from qdrant_client import QdrantClient
 from qdrant_client.models import VectorParams, PointStruct
-import tensorflow as tf
-import tensorflow_hub as hub
-import numpy as np
 import time
+import pandas as pd
+import numpy as np
 
 # Connect to Qdrant
 client = QdrantClient(host="qdrant", port=6333)
 
 # Configuration
-COLLECTION_NAME = "text_embeddings"
-VECTOR_SIZE = 512  # Universal Sentence Encoder produces 512-dimensional vectors
-NUM_POINTS = 5
-
-class TextEmbedding:
-    def __init__(self):
-        self.model = None
-        
-    def load_model(self):
-        """Load the Universal Sentence Encoder model"""
-        if not self.model:
-            print('Loading Universal Sentence Encoder model...')
-            self.model = hub.load('https://tfhub.dev/google/universal-sentence-encoder/4')
-            print('Model loaded successfully!')
-        return self.model
-    
-    def generate_embeddings(self, texts):
-        """Generate embeddings for a single text or list of texts"""
-        if not self.model:
-            self.load_model()
-            
-        # Convert single text to list if necessary
-        if isinstance(texts, str):
-            texts = [texts]
-            
-        # Generate embeddings
-        embeddings = self.model(texts)
-        return embeddings.numpy()
+COLLECTION_NAME = "test_collection"
+VECTOR_SIZE = 1536  # Ada-002 produces 1536-dimensional vectors (changed from 512)
 
 def create_collection():
     # Create collection with vector configuration for USE embeddings
@@ -46,52 +19,35 @@ def create_collection():
     )
     print(f"Created collection: {COLLECTION_NAME}")
 
-def generate_sample_texts():
-    """Generate sample texts for demonstration"""
-    sample_texts = [
-        "Machine learning is transforming the technology landscape",
-        "Natural language processing enables human-computer interaction",
-        "Vector databases are essential for semantic search",
-        "Deep learning models can understand context in text",
-        "Artificial intelligence is advancing rapidly"
-    ]
-    return sample_texts[:NUM_POINTS]
-
 def generate_and_upload_data():
-    # Initialize text embedding model
-    embedder = TextEmbedding()
-    
-    # Generate sample texts
-    texts = generate_sample_texts()
-    
-    # Generate embeddings for all texts
-    embeddings = embedder.generate_embeddings(texts)
+    # Load the pre-generated dataset
+    df = pd.read_csv('fake_sentences.csv')
     
     points = []
-    for i, (text, vector) in enumerate(zip(texts, embeddings)):
-        # Set some points as deprecated randomly
-        is_deprecated = bool(np.random.choice([True, False], p=[0.2, 0.8]))
+    for i, row in df.iterrows():
+        # Convert string representation of embedding back to list
+        embedding = eval(row['embedding'])
         
-        # Create point with payload
         point = PointStruct(
             id=i,
-            vector=vector.tolist(),  # Convert numpy array to list
+            vector=embedding,
             payload={
-                "deprecated": is_deprecated,
-                "deprecated_at": time.strftime('%Y-%m-%d %H:%M:%S') if is_deprecated else None,
-                "text": text,
-                "category": np.random.choice(["AI", "ML", "NLP"]),
-                "value": int(np.random.randint(1, 100))
+                "deprecated": row['deprecated'],
+                "deprecated_at": time.strftime('%Y-%m-%d %H:%M:%S') if row['deprecated'] else None,
+                "text": row['sentence']
             }
         )
         points.append(point)
     
-    # Upload points
-    client.upsert(
-        collection_name=COLLECTION_NAME,
-        points=points
-    )
-    print(f"Uploaded {len(points)} points with text embeddings")
+    # Upload points in batches of 100 to avoid memory issues
+    batch_size = 100
+    for i in range(0, len(points), batch_size):
+        batch = points[i:i + batch_size]
+        client.upsert(
+            collection_name=COLLECTION_NAME,
+            points=batch
+        )
+        print(f"Uploaded batch {i//batch_size + 1} of {len(points)//batch_size + 1}")
 
 def main():
     print("Starting data loading process...")
